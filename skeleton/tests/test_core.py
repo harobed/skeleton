@@ -370,17 +370,17 @@ class TestBool(TestCase):
     def test_full_description(self):
         """Tests Bool full description (complete)"""
         var = Bool('foo', description='dummy var')
-        self.assertEqual(var.full_description, 'Foo (dummy var - y/N)')
+        self.assertEqual(var.full_description, 'Foo (dummy var - y/n)')
 
     def test_basic_full_description(self):
         """Tests Bool full description (complete)"""
         var = Bool('foo')
-        self.assertEqual(var.full_description, 'Foo (y/N)')
+        self.assertEqual(var.full_description, 'Foo (y/n)')
 
     def test_prompt_true(self):
         """Tests Bool.prompt for True"""
         var = Bool('foo')
-        self.assertEqual(var.prompt, 'Enter Foo (y/N): ')
+        self.assertEqual(var.prompt, 'Enter Foo (y/n): ')
 
     def test_do_prompt_true(self):
         """Tests Bool.do_prompt() for True"""
@@ -403,7 +403,7 @@ class TestBool(TestCase):
     def test_prompt_with_default(self):
         """Tests Bool.prompt with default"""
         var = Bool('foo', default=True)
-        self.assertEqual(var.prompt, "Enter Foo (y/N) ['y']: ")
+        self.assertEqual(var.prompt, "Enter Foo (Y/n) ['Y']: ")
 
     def test_do_prompt_with_default(self):
         """Tests Bool.do_prompt() with default"""

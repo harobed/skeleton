@@ -132,3 +132,8 @@ def prompt(prompt_):
         return result.decode(sys.stdin.encoding)
     except AttributeError:
         return result
+
+def file_put_contents(path, data):
+    f = open(path, "w")
+    f.write(data)
+    f.close()

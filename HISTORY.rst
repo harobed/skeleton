@@ -1,6 +1,14 @@
 History
 =======
 
+0.7beta (April 24, 2011)
+------------------------
+
+- `skeleton.Val` `default` attribute can be an `lambda` type whose can access to `skeleton` object to return default value dependent on previous user answers
+- `skeleton.Bool` return Y/n if default is Y, y/N if default is N, y/n if there is no default value
+- `skeleton.Bool` result value is always an boolean
+- Add `skeleton.utils.file_put_contents` helper function
+
 0.6 (Mai 12, 2010)
 --------------------
 

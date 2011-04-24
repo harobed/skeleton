@@ -11,6 +11,7 @@ import os
 import shutil
 import sys
 import weakref
+import types
 
 from skeleton.utils import (
     get_loggger, get_file_mode, vars_to_optparser, prompt)
@@ -239,7 +240,7 @@ class Skeleton(collections.MutableMapping):
         """
         for var in self.variables:
             if var.name not in self.set_variables:
-                self[var.name] = var.do_prompt()
+                self[var.name] = var.do_prompt(self)
             else:
                 _LOG.debug("Variable %r already set", var.name)
 
@@ -447,12 +448,23 @@ class Var(object):
     def __init__(self, name, description=None, default=None, intro=None):
         self.name = name
         self.description = description
-        self.default = default
+        self._default = default
         self.intro = intro
+        self._skeleton_obj = None
 
     def __repr__(self):
         return u'<%s %s default=%r>' % (
-            self.__class__.__name__, self.name, self.default,)
+            self.__class__.__name__, self.name, self.default)
+
+    @property
+    def default(self):
+        if type(self._default) is types.LambdaType:
+            if self._skeleton_obj is None:
+                return '<Lambda>'
+            else:
+                return self._default(self._skeleton_obj)
+        else:
+            return self._default
 
     @property
     def display_name(self):
@@ -482,7 +494,7 @@ class Var(object):
         prompt_ += u': '
         return prompt_
 
-    def do_prompt(self):
+    def do_prompt(self, skeleton_obj=None):
         """Prompt user for variable value and return the validated value
 
         It will keep prompting the user until it receive a valid value.
@@ -496,6 +508,7 @@ class Var(object):
         if self.intro is not None:
             print self.intro
 
+        self._skeleton_obj = skeleton_obj
         prompt_ = self.prompt
         while True:
             try:
@@ -526,15 +539,39 @@ class Bool(Var):
     """
 
     @property
+    def default(self):
+        v = super(Bool, self).default
+
+        if isinstance(v, bool):
+            v = 'y' if v else 'n'
+
+        return v
+
+    @property
     def full_description(self):
         """Return the name of the variable, a description if description
         is set, and the y/N choice.
 
         """
         if self.description:
-            return u'%s (%s - y/N)' % (self.display_name, self.description,)
+            return u'%s (%s - %s)' % (self.display_name, self.description, self.__get_y_or_n_msg())
         else:
-            return u'%s (y/N)' % self.display_name
+            return u'%s (%s)' % (self.display_name, self.__get_y_or_n_msg())
+
+    def __get_y_or_n_msg(self):
+        if isinstance(self.default, str):
+            if self.default.lower() == 'n':
+                return u"y/N"
+            elif self.default.lower() == 'y':
+                return u"Y/n"
+
+        if isinstance(self.default, bool):
+            if self.default:
+                return u"Y/n"
+            else:
+                return u"y/N"
+
+        return u"y/n"
 
     @property
     def prompt(self):
@@ -542,8 +579,9 @@ class Bool(Var):
 
         """
         prompt_ = u'Enter %s' % self.full_description
+
         if self.default is not None:
-            prompt_ += u' [%r]' % (self.default and 'y' or 'N')
+            prompt_ += u' [%r]' % (self.default.upper())
         prompt_ += u': '
         return prompt_
 
@@ -555,15 +593,17 @@ class Bool(Var):
         if no value was given and one is required.
 
         """
+        if response == '':
+            if self.default is not None:
+                response = self.default
+            else:
+                raise ValidateError("%s is required" % self.display_name)
+
         response = response.strip().upper()
+
         if response in ('Y', 'YES',):
             return True
         elif response in ('N', 'NO',):
             return False
-        elif response == '':
-            if self.default is not None:
-                return self.default
-            else:
-                raise ValidateError("%s is required" % self.display_name)
         else:
             raise ValidateError('enter either "Y" for yes or "N" or no')
